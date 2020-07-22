@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Charts Demo</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.all.js"></script>
+    <style type="text/css">
+        /* required files for gridstack to work */
+        
+        @import "https://cdn.jsdelivr.net/npm/gridstack@1.1.2/dist/gridstack.min.css";
+        /* Optional styles for demos */
+        
+        body {
+            overflow: hidden;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: #007bff;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: .375rem .75rem;
+            line-height: 1.5;
+            border-radius: .25rem;
+        }
+        
+        .grid-stack-item-content {
+            color: #2c3e50;
+            text-align: center;
+            background-color: white;
+            border-radius: 10px;
+        }
+        
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .grid-stack {
+            min-height: calc(100vh - 88px);
+        }
+        
+        .grid-stack-item-removing {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+
+        <div class="row">
+
+            <div class="col-md-3" style="background: #2f3646">
+                <div>
+                    <button class="btn btn-primary" style="width: 100%;    margin-top: 20px;" onclick="saveGrid()">Save Changes</button>
+                </div>
+
+                <div class="grid-stack sidebar" style="margin-top: 30px;">
+                </div>
+            </div>
+            <div class="col-md-9" style="background: #1b1e27">
+                <div class="grid-stack content grid-stack-6" style="margin-top: 30px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resources -->
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+
+    <script type="text/javascript">
+        var sidebarGrid = GridStack.init({
+            acceptWidgets: true
+        }, '.grid-stack.sidebar');
+        var contentGrid = GridStack.init({
+            acceptWidgets: true,
+            column: 12,
+        }, '.grid-stack.content');
+        sidebarGrid.column(1);
+
+        var serializedSidebarData;
+
+        var serializedContentData;
+
+        loadSidebarGrid = function() {
+            sidebarGrid.removeAll();
+            var items = GridStack.Utils.sort(serializedSidebarData);
+            sidebarGrid.batchUpdate();
+            items.forEach(function(node) {
+                sidebarGrid.addWidget(`<div><div class="grid-stack-item-content"><div class="chart" id="${node.id}"></div></div></div>`, node);
+            });
+            sidebarGrid.commit();
+        };
+
+        loadContentGrid = function() {
+            contentGrid.removeAll();
+            var items = GridStack.Utils.sort(serializedContentData);
+            contentGrid.batchUpdate();
+            items.forEach(function(node) {
+                contentGrid.addWidget(`<div><div class="grid-stack-item-content"><div class="chart" id="${node.id}"></div></div></div>`, node);
+            });
+            contentGrid.commit();
+        };
+
+        saveSidebarGrid = function() {
+            serializedSidebarData = [];
+            sidebarGrid.engine.nodes.forEach(function(node) {
+                serializedSidebarData.push({
+                    x: node.x,
+                    y: node.y,
+                    width: node.width,
+                    height: node.height,
+                    minWidth: 4,
+                    minHeight: 3,
+                    id: node.el.firstChild.firstChild.id,
+                });
+            });
+        };
+
+        saveContentGrid = function() {
+            serializedContentData = [];
+            contentGrid.engine.nodes.forEach(function(node) {
+                serializedContentData.push({
+                    x: node.x,
+                    y: node.y,
+                    width: node.width,
+                    height: node.height,
+                    minWidth: 4,
+                    minHeight: 3,
+                    id: node.el.firstChild.firstChild.id,
+                });
+            });
+        };
+
+        loadGrid = function() {
+            loadSidebarGrid();
+            loadContentGrid();
+        }
+
+        var createSecondChart = function() {
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            var chart = am4core.create("second-chart-div", am4charts.ChordDiagram);
+            chart.hiddenState.properties.opacity = 0;
+
+            var data = [];
+            var letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+
+            function randomLetter(except) {
+                var letter = letters[Math.floor(Math.random() * letters.length - 1)];
+                if (letter == except) {
+                    return randomLetter(except);
+                } else {
+                    return letter;
+                }
+            }
+
+            for (var i = 0; i < letters.length; i++) {
+                var fromLetter = letters[i];
+                for (var o = 0; o < 3; o++) {
+                    data.push({
+                        from: fromLetter,
+                        to: randomLetter(fromLetter),
+                        value: Math.round(Math.random() * 100)
+                    });
+                }
+            }
+
+            chart.data = data;
+
+            chart.dataFields.fromName = "from";
+            chart.dataFields.toName = "to";
+            chart.dataFields.value = "value";
+            chart.nonRibbon = true;
+            chart.sortBy = "name";
+            chart.startAngle = 90;
+            chart.endAngle = 450;
+
+            var nodeTemplate = chart.nodes.template;
+            nodeTemplate.fill = chart.colors.getIndex(0);
+            nodeTemplate.fillOpacity = 0.4;
+            nodeTemplate.slice.disabled = true;
+            nodeTemplate.setStateOnChildren = true;
+            nodeTemplate.label.disabled = true;
+            nodeTemplate.togglable = false;
+
+            nodeTemplate.readerTitle = "Drag to rearrange";
+            nodeTemplate.showSystemTooltip = true;
+
+            var hoverState = nodeTemplate.states.create("hover");
+            hoverState.properties.fillOpacity = 1;
+
+            var linkTemplate = chart.links.template;
+            linkTemplate.opacity = 0.1;
+            linkTemplate.stroke = chart.colors.getIndex(0);
+            linkTemplate.defaultState.properties.opacity = 0.1;
+            linkTemplate.tooltipText = "";
+
+            var linkHoverState = linkTemplate.states.create("hover");
+            linkHoverState.properties.opacity = 1;
+
+            nodeTemplate.events.on("over", function(event) {
+                var node = event.target;
+                node.outgoingDataItems.each(function(dataItem) {
+                    dataItem.link.isHover = true;
+                })
+            })
+
+            nodeTemplate.events.on("out", function(event) {
+                var node = event.target;
+                node.outgoingDataItems.each(function(dataItem) {
+                    dataItem.link.isHover = false;
+                })
+            })
+
+            nodeTemplate.cursorOverStyle = am4core.MouseCursorStyle.grab;
+
+            nodeTemplate.cursorDownStyle = am4core.MouseCursorStyle.grabbing;
+
+            var circleBullet = nodeTemplate.createChild(am4charts.CircleBullet);
+            circleBullet.setStateOnChildren = true;
+            circleBullet.circle.radius = 15;
+
+            var circleHoverState = circleBullet.states.create("hover");
+            circleHoverState.properties.scale = 1.5;
+
+            // we create a separate label as node.label ispositioned differently and doesn't fit perfectly for one-letter labels
+            var label = circleBullet.createChild(am4core.Label);
+            label.text = "{fromName}";
+            label.horizontalCenter = "middle";
+            label.verticalCenter = "middle";
+
+            var labelHoverState = label.states.create("hover");
+            labelHoverState.properties.fill = am4core.color("#ffffff");
+        }
+
+        var createFirstChart = function() {
+            // Themes begin
+            am4core.useTheme(am4themes_animated);
+            // Themes end
+
+            var chart = am4core.create("first-chart-div", am4charts.SlicedChart);
+            chart.paddingBottom = 30;
+            chart.data = [{
+                "name": "Stage #1",
+                "value": 600
+            }, {
+                "name": "Stage #2",
+                "value": 300
+            }, {
+                "name": "Stage #3",
+                "value": 200
+            }, {
+                "name": "Stage #4",
+                "value": 180
+            }, {
+                "name": "Stage #5",
+                "value": 50
+            }, {
+                "name": "Stage #6",
+                "value": 20
+            }, {
+                "name": "Stage #7",
+                "value": 280
+            }];
+
+            var series = chart.series.push(new am4charts.PyramidSeries());
+            series.dataFields.value = "value";
+            series.dataFields.category = "name";
+            series.alignLabels = true;
+            series.valueIs = "height";
+
+        }
+
+        var createChart = function() {
+            createFirstChart();
+            createSecondChart();
+        }
+
+        sidebarGrid.on('added', function(event, items) {
+            const id = event.target.lastChild.firstChild.firstChild.id;
+            if (id === "first-chart-div") {
+                createFirstChart();
+            } else if (id === "second-chart-div") {
+                createSecondChart();
+            }
+        });
+
+        contentGrid.on('added', function(event, items) {
+            const id = event.target.lastChild.firstChild.firstChild.id;
+            if (id === "first-chart-div") {
+                createFirstChart();
+            } else if (id === "second-chart-div") {
+                createSecondChart();
+            }
+        });
+
+        saveGrid = function() {
+            saveContentGrid();
+            saveSidebarGrid();
+            localStorage.setItem('serializedSidebarData', JSON.stringify(serializedSidebarData));
+            localStorage.setItem('serializedContentData', JSON.stringify(serializedContentData));
+        }
+
+
+        // chart
+        am4core.ready(function() {
+            var savedSidebar = JSON.parse(localStorage.getItem('serializedSidebarData'));
+            var savedContent = JSON.parse(localStorage.getItem('serializedContentData'));
+            if (!savedSidebar && !savedContent) {
+                serializedSidebarData = [{
+                    x: 0,
+                    y: 0,
+                    height: 2,
+                    id: '1',
+                    minWidth: 4,
+                    minHeight: 3,
+                    id: 'first-chart-div'
+                }, {
+                    x: 0,
+                    y: 0,
+                    height: 2,
+                    id: '1',
+                    minWidth: 4,
+                    minHeight: 3,
+                    id: 'second-chart-div'
+                }];
+                serializedContentData = [];
+            } else {
+                serializedSidebarData = savedSidebar;
+                serializedContentData = savedContent;
+            }
+            loadGrid();
+            createChart();
+        }); // end am4core.ready()
+    </script>
+</body>
+
+</html>
